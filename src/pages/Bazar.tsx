@@ -20,7 +20,6 @@ const Bazar = ({ onFullscreenChange }: BazarProps) => {
   });
 
   const [hasPressed, setHasPressed] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
