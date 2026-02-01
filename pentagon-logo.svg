@@ -1,0 +1,10 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradientPentagon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9333ea;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <polygon points="250,50 450,175 380,425 120,425 50,175" fill="none" stroke="url(#gradientPentagon)" stroke-width="25" stroke-linejoin="round"/>
+  <polygon points="250,80 420,190 360,410 140,410 80,190" fill="none" stroke="url(#gradientPentagon)" stroke-width="15" stroke-linejoin="round" opacity="0.6"/>
+</svg>
