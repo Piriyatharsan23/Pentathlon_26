@@ -54,6 +54,15 @@ const Display = ({ isLoggedIn = false }: DisplayProps) => {
       
       if (error) throw error;
       
+      // Broadcast reset event to all users
+      await supabase
+        .channel('buzzer-broadcast')
+        .send({
+          type: 'broadcast',
+          event: 'BUZZER_RESET',
+          payload: { timestamp: new Date().toISOString() }
+        });
+      
       // Refresh the display
       fetchSchools();
       alert('Buzzer data reset successfully!');

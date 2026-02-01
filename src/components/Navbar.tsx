@@ -1,9 +1,35 @@
 interface NavbarProps {
-  activePage: 'bazar' | 'display' | 'coding' | null;
-  onNavigate: (page: 'bazar' | 'display' | 'coding') => void;
+  activePage: 'bazar' | 'display' | 'leaderboard' | 'coding' | null;
+  onNavigate: (page: 'bazar' | 'display' | 'leaderboard' | 'coding') => void;
   isLoggedIn?: boolean;
   onLogout?: () => void;
 }
+
+const PentagonLogo = () => (
+  <svg viewBox="0 0 100 100" className="w-8 sm:w-9 md:w-10 h-8 sm:h-9 md:h-10 flex-shrink-0">
+    <defs>
+      <linearGradient id="pentagonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#3b82f6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#9333ea', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    <polygon 
+      points="50,10 90,35 76,85 24,85 10,35" 
+      fill="none" 
+      stroke="url(#pentagonGradient)" 
+      strokeWidth="4" 
+      strokeLinejoin="round"
+    />
+    <polygon 
+      points="50,18 84,40 72,80 28,80 16,40" 
+      fill="none" 
+      stroke="url(#pentagonGradient)" 
+      strokeWidth="2" 
+      strokeLinejoin="round" 
+      opacity="0.6"
+    />
+  </svg>
+);
 
 const Navbar = ({ activePage, onNavigate, isLoggedIn = false, onLogout }: NavbarProps) => {
   return (
@@ -12,9 +38,7 @@ const Navbar = ({ activePage, onNavigate, isLoggedIn = false, onLogout }: Navbar
         <div className="flex items-center justify-between gap-1 sm:gap-2 md:gap-4">
           {/* Logo Section - Fixed at left */}
           <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0 min-w-0">
-            <div className="w-8 sm:w-9 md:w-10 h-8 sm:h-9 md:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-white font-bold text-sm sm:text-lg md:text-xl">P</span>
-            </div>
+            <PentagonLogo />
             <span className="text-sm sm:text-lg md:text-2xl font-bold text-white whitespace-nowrap hidden sm:inline">Pentathlon</span>
           </div>
 
@@ -60,6 +84,21 @@ const Navbar = ({ activePage, onNavigate, isLoggedIn = false, onLogout }: Navbar
                 }`}
               >
                 Display
+              </button>
+            )}
+
+            {isLoggedIn && <div className="w-px h-5 sm:h-6 bg-white/20"></div>}
+
+            {isLoggedIn && (
+              <button
+                onClick={() => onNavigate('leaderboard')}
+                className={`text-xs sm:text-sm md:text-lg font-medium transition-all duration-300 pb-2 border-b-2 outline-none focus:outline-none focus:ring-0 whitespace-nowrap ${
+                  activePage === 'leaderboard'
+                    ? 'text-cyan-400 border-cyan-400'
+                    : 'text-gray-300 hover:text-white border-b-2 border-transparent'
+                }`}
+              >
+                Leaderboard
               </button>
             )}
           </div>

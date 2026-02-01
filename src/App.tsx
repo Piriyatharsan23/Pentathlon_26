@@ -3,12 +3,13 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Navbar from './components/Navbar';
 import Bazar from './pages/Bazar';
 import Display from './pages/Display';
+import Leaderboard from './pages/Leaderboard';
 import Coding from './pages/Coding';
 import Login from './pages/Login';
 import { supabase } from './lib/supabase.ts';
 import './App.css';
 
-type Page = 'bazar' | 'display' | 'coding';
+type Page = 'bazar' | 'display' | 'leaderboard' | 'coding';
 
 function App() {
   const [activePage, setActivePage] = useState<Page>(() => {
@@ -17,6 +18,8 @@ function App() {
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isBazarFullscreen, setIsBazarFullscreen] = useState(false);
+  const [isLeaderboardFullscreen, setIsLeaderboardFullscreen] = useState(false);
   
   // Restore path from 404 redirect
   useEffect(() => {
@@ -83,8 +86,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#0f1729]">
-      {!isLoginRoute && <Navbar activePage={activePage} onNavigate={handleNavigate} isLoggedIn={isLoggedIn} onLogout={handleLogout} />}
-      <main className={'pt-20'}>
+      {!isLoginRoute && !isBazarFullscreen && !isLeaderboardFullscreen && <Navbar activePage={activePage} onNavigate={handleNavigate} isLoggedIn={isLoggedIn} onLogout={handleLogout} />}
+      <main className={isBazarFullscreen || isLeaderboardFullscreen ? '' : 'pt-20'}>
         {isLoginRoute ? (
           <Login onLoginSuccess={() => {
             setIsLoggedIn(true);
@@ -93,9 +96,10 @@ function App() {
           }} />
         ) : (
           <>
-            {activePage === 'bazar' && !isLoggedIn && <Bazar />}
+            {activePage === 'bazar' && !isLoggedIn && <Bazar onFullscreenChange={setIsBazarFullscreen} />}
             {activePage === 'coding' && !isLoggedIn && <Coding />}
             {activePage === 'display' && isLoggedIn && <Display isLoggedIn={isLoggedIn} />}
+            {activePage === 'leaderboard' && isLoggedIn && <Leaderboard onFullscreenChange={setIsLeaderboardFullscreen} />}
           </>
         )}
       </main>

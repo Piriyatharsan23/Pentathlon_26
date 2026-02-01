@@ -3,7 +3,11 @@ import { supabase } from '../lib/supabase.ts';
 
 type BazarStep = 'form' | 'buzzer' | 'display';
 
-const Bazar = () => {
+interface BazarProps {
+  onFullscreenChange?: (isFullscreen: boolean) => void;
+}
+
+const Bazar = ({ onFullscreenChange }: BazarProps) => {
   const [step, setStep] = useState<BazarStep>(() => {
     const saved = localStorage.getItem('bazarStep');
     return (saved as BazarStep) || 'form';
@@ -14,6 +18,9 @@ const Bazar = () => {
   const [schoolName, setSchoolName] = useState(() => {
     return localStorage.getItem('schoolName') || '';
   });
+
+  const [hasPressed, setHasPressed] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timeoutRef = useRef<number | null>(null);
@@ -40,6 +47,7 @@ const Bazar = () => {
           await (elem as any).msRequestFullscreen();
         }
         setIsFullscreen(true);
+        onFullscreenChange?.(true);
       } else {
         // Exit fullscreen
         if (document.fullscreenElement || (document as any).webkitFullscreenElement || (document as any).mozFullScreenElement) {
@@ -54,6 +62,7 @@ const Bazar = () => {
           }
         }
         setIsFullscreen(false);
+        onFullscreenChange?.(false);
       }
     } catch (err) {
       console.error('Fullscreen toggle error:', err);
@@ -67,6 +76,69 @@ const Bazar = () => {
   useEffect(() => {
     localStorage.setItem('schoolName', schoolName);
   }, [schoolName]);
+
+  // Check if school has already pressed when entering buzzer step
+  useEffect(() => {
+    if (step === 'buzzer' && schoolName.trim()) {
+      checkIfAlreadyPressed();
+    }
+  }, [step, schoolName]);
+
+  const checkIfAlreadyPressed = async () => {
+    try {
+      const { data: schoolData, error } = await supabase
+        .from('schools')
+        .select('pressed_at')
+        .eq('school_name', schoolName.trim())
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking pressed status:', error);
+      } else if (schoolData && schoolData.pressed_at) {
+        setHasPressed(true);
+      } else {
+        setHasPressed(false);
+      }
+    } catch (err) {
+      console.error('Failed to check pressed status:', err);
+    }
+  };
+
+  // Subscribe to buzzer reset changes
+  useEffect(() => {
+    if (step === 'buzzer' && schoolName.trim()) {
+      const subscription = supabase
+        .channel(`buzzer-reset-${schoolName.trim()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'schools'
+          },
+          (payload: any) => {
+            // Check if this is our school and if pressed_at was cleared
+            if (payload.new.school_name === schoolName.trim() && payload.new.pressed_at === null) {
+              setHasPressed(false);
+            }
+          }
+        )
+        .subscribe();
+
+      const broadcastSubscription = supabase
+        .channel('buzzer-broadcast')
+        .on('broadcast', { event: 'BUZZER_RESET' }, () => {
+          // Reset button for all users when admin clears data
+          setHasPressed(false);
+        })
+        .subscribe();
+
+      return () => {
+        subscription.unsubscribe();
+        broadcastSubscription.unsubscribe();
+      };
+    }
+  }, [step, schoolName]);
 
   const handleNext = async () => {
     if (schoolName.trim()) {
@@ -220,6 +292,7 @@ const Bazar = () => {
         console.error('Error updating buzzer press:', error);
       } else {
         console.log('Buzzer pressed successfully');
+        setHasPressed(true);
       }
     } catch (err) {
       console.error('Failed to update buzzer press:', err);
@@ -287,16 +360,25 @@ const Bazar = () => {
         <div className="text-center px-4">
           <button
             onClick={handleBuzzerClick}
-            className="w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 rounded-full transition-all duration-300 cursor-pointer bg-gradient-to-br from-red-400 to-red-600 hover:scale-110 hover:shadow-xl shadow-lg shadow-red-400/30"
+            disabled={hasPressed}
+            className={`w-80 h-80 sm:w-96 sm:h-96 md:w-[28rem] md:h-[28rem] rounded-full transition-all duration-300 shadow-lg shadow-red-400/30 flex items-center justify-center ${
+              hasPressed
+                ? 'bg-gradient-to-br from-gray-500 to-gray-700 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-br from-red-400 to-red-600 hover:scale-110 hover:shadow-xl cursor-pointer'
+            }`}
             style={{
-              boxShadow: '0 20px 40px rgba(239, 68, 68, 0.3)',
-              cursor: 'pointer'
+              boxShadow: hasPressed ? 'none' : '0 20px 40px rgba(239, 68, 68, 0.3)',
             }}
           >
             <span className="text-white text-3xl sm:text-4xl md:text-5xl font-bold">
-              BUZZ
+              {hasPressed ? 'ALREADY\nPRESSED' : 'BUZZ'}
             </span>
           </button>
+          {hasPressed && (
+            <p className="text-gray-400 text-sm sm:text-base md:text-lg mt-8">
+              Your school has already pressed. Waiting for admin to reset...
+            </p>
+          )}
         </div>
         {/* Fullscreen Toggle Button - Bottom Right Corner */}
         <button
